@@ -1,22 +1,36 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Synapset API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User operations
+  - name: sessions
+    description: Study session operations
+  - name: revisions
+    description: Revision schedule operations
+  - name: focus
+    description: Focus session operations
+  - name: breaks
+    description: Brain break operations
+  - name: drawings
+    description: Air drawing operations
+  - name: coach
+    description: AI coach operations
+  - name: dashboard
+    description: Dashboard summary operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +38,318 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /study-sessions:
+    get:
+      operationId: getStudySessions
+      tags: [sessions]
+      summary: List study sessions
+      responses:
+        "200":
+          description: List of study sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudySession"
+    post:
+      operationId: createStudySession
+      tags: [sessions]
+      summary: Create a study session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudySessionBody"
+      responses:
+        "201":
+          description: Created study session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySession"
+
+  /study-sessions/{id}:
+    get:
+      operationId: getStudySession
+      tags: [sessions]
+      summary: Get study session by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Study session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySession"
+    delete:
+      operationId: deleteStudySession
+      tags: [sessions]
+      summary: Delete study session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /revisions:
+    get:
+      operationId: getRevisions
+      tags: [revisions]
+      summary: List revision schedules
+      parameters:
+        - name: completed
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of revisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Revision"
+
+  /revisions/{id}/complete:
+    post:
+      operationId: completeRevision
+      tags: [revisions]
+      summary: Mark revision as completed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completed revision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Revision"
+
+  /focus-sessions:
+    get:
+      operationId: getFocusSessions
+      tags: [focus]
+      summary: List focus sessions
+      responses:
+        "200":
+          description: List of focus sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FocusSession"
+    post:
+      operationId: createFocusSession
+      tags: [focus]
+      summary: Log a focus session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFocusSessionBody"
+      responses:
+        "201":
+          description: Created focus session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusSession"
+
+  /brain-breaks:
+    get:
+      operationId: getBrainBreaks
+      tags: [breaks]
+      summary: List brain breaks
+      responses:
+        "200":
+          description: List of brain breaks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrainBreak"
+    post:
+      operationId: createBrainBreak
+      tags: [breaks]
+      summary: Log a brain break
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBrainBreakBody"
+      responses:
+        "201":
+          description: Created brain break
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainBreak"
+
+  /air-drawings:
+    get:
+      operationId: getAirDrawings
+      tags: [drawings]
+      summary: List air drawings
+      responses:
+        "200":
+          description: List of air drawings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AirDrawing"
+    post:
+      operationId: createAirDrawing
+      tags: [drawings]
+      summary: Save an air drawing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAirDrawingBody"
+      responses:
+        "201":
+          description: Created air drawing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AirDrawing"
+
+  /coach/chat:
+    post:
+      operationId: coachChat
+      tags: [coach]
+      summary: Send message to AI coach
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoachChatBody"
+      responses:
+        "200":
+          description: Coach response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachChatResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary with retention scores
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/retention-curve/{sessionId}:
+    get:
+      operationId: getRetentionCurve
+      tags: [dashboard]
+      summary: Get retention curve data for a study session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Retention curve data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetentionCurveData"
+
+  /dashboard/focus-heatmap:
+    get:
+      operationId: getFocusHeatmap
+      tags: [dashboard]
+      summary: Get weekly focus heatmap data
+      responses:
+        "200":
+          description: Focus heatmap
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HeatmapEntry"
+
+  /dashboard/urgent-revisions:
+    get:
+      operationId: getUrgentRevisions
+      tags: [dashboard]
+      summary: Get topics needing urgent revision
+      responses:
+        "200":
+          description: Urgent revisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UrgentRevision"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +357,274 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        xp:
+          type: integer
+        streak:
+          type: integer
+        level:
+          type: integer
+      required: [id, name, email, xp, streak, level]
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+
+    StudySession:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        topic:
+          type: string
+        duration:
+          type: integer
+        difficulty:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, topic, duration, difficulty, createdAt]
+
+    CreateStudySessionBody:
+      type: object
+      properties:
+        topic:
+          type: string
+        duration:
+          type: integer
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+          nullable: true
+      required: [topic, duration, difficulty]
+
+    Revision:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        topic:
+          type: string
+        nextRevision:
+          type: string
+          format: date-time
+        completed:
+          type: boolean
+        retentionScore:
+          type: number
+        daysSinceStudy:
+          type: number
+      required: [id, sessionId, topic, nextRevision, completed, retentionScore, daysSinceStudy]
+
+    FocusSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        duration:
+          type: integer
+        focusConsistencyScore:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, userId, duration, focusConsistencyScore, timestamp]
+
+    CreateFocusSessionBody:
+      type: object
+      properties:
+        duration:
+          type: integer
+        focusConsistencyScore:
+          type: number
+      required: [duration, focusConsistencyScore]
+
+    BrainBreak:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        blinkScore:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, userId, blinkScore, timestamp]
+
+    CreateBrainBreakBody:
+      type: object
+      properties:
+        blinkScore:
+          type: number
+      required: [blinkScore]
+
+    AirDrawing:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        topicLinked:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, userId, topicLinked, timestamp]
+
+    CreateAirDrawingBody:
+      type: object
+      properties:
+        topicLinked:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+      required: [topicLinked]
+
+    CoachChatBody:
+      type: object
+      properties:
+        message:
+          type: string
+        context:
+          type: object
+          nullable: true
+      required: [message]
+
+    CoachChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+      required: [reply, suggestions]
+
+    DashboardSummary:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        subjectCards:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectCard"
+        totalStudySessions:
+          type: integer
+        totalFocusSessions:
+          type: integer
+        totalBrainBreaks:
+          type: integer
+        avgFocusScore:
+          type: number
+      required: [user, subjectCards, totalStudySessions, totalFocusSessions, totalBrainBreaks, avgFocusScore]
+
+    SubjectCard:
+      type: object
+      properties:
+        topic:
+          type: string
+        retentionPercent:
+          type: number
+        daysSinceStudy:
+          type: number
+        nextRevisionDate:
+          type: string
+          format: date-time
+          nullable: true
+        isUrgent:
+          type: boolean
+        sessionId:
+          type: integer
+      required: [topic, retentionPercent, daysSinceStudy, isUrgent, sessionId]
+
+    RetentionCurveData:
+      type: object
+      properties:
+        sessionId:
+          type: integer
+        topic:
+          type: string
+        difficulty:
+          type: integer
+        dataPoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/CurvePoint"
+        currentRetention:
+          type: number
+        optimalRevisionDay:
+          type: number
+      required: [sessionId, topic, difficulty, dataPoints, currentRetention, optimalRevisionDay]
+
+    CurvePoint:
+      type: object
+      properties:
+        day:
+          type: number
+        retention:
+          type: number
+      required: [day, retention]
+
+    HeatmapEntry:
+      type: object
+      properties:
+        date:
+          type: string
+        score:
+          type: number
+        sessionCount:
+          type: integer
+      required: [date, score, sessionCount]
+
+    UrgentRevision:
+      type: object
+      properties:
+        revisionId:
+          type: integer
+        sessionId:
+          type: integer
+        topic:
+          type: string
+        retentionScore:
+          type: number
+        daysSinceStudy:
+          type: number
+        overdueDays:
+          type: number
+      required: [revisionId, sessionId, topic, retentionScore, daysSinceStudy, overdueDays]

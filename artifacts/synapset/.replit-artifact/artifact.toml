@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Synapset"
+version = "1.0.0"
+id = "artifacts/synapset"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18594
+
+[services.development]
+run = "pnpm --filter @workspace/synapset run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/synapset", "run", "build" ]
+publicDir = "artifacts/synapset/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18594"
+BASE_PATH = "/"
