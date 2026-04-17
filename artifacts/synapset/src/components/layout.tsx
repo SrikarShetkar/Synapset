@@ -7,19 +7,27 @@ import {
   Timer,
   PenTool,
   BrainCircuit,
+  Sparkles,
+  Eye,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ className }: { className?: string }) {
   const [location] = useLocation();
+  const [stressBurstersOpen, setStressBurstersOpen] = useState(true);
 
-  const links = [
+  const mainLinks = [
     { href: "/dashboard", label: "Brain Map", icon: LayoutDashboard },
     { href: "/log", label: "Log Session", icon: BookOpen },
     { href: "/coach", label: "Coach", icon: MessageSquare },
     { href: "/focus", label: "Deep Work", icon: Timer },
-    { href: "/air-draw", label: "Trace to Remember", icon: PenTool },
-    { href: "/break", label: "Synapse Reset", icon: BrainCircuit },
+  ];
+
+  const stressBusterLinks = [
+    { href: "/air-draw", label: "Neural Canvas", icon: PenTool },
+    { href: "/break", label: "Blink Reset", icon: Eye },
   ];
 
   return (
@@ -35,8 +43,9 @@ export function Sidebar({ className }: { className?: string }) {
           Synapset
         </span>
       </div>
+
       <div className="space-y-1">
-        {links.map((link) => {
+        {mainLinks.map((link) => {
           const Icon = link.icon;
           const isActive = location === link.href;
           return (
@@ -55,6 +64,45 @@ export function Sidebar({ className }: { className?: string }) {
             </Link>
           );
         })}
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={() => setStressBurstersOpen((o) => !o)}
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-accent/80 hover:text-accent transition-colors"
+        >
+          <Sparkles className="w-3 h-3" />
+          Stress Bursters
+          {stressBurstersOpen ? (
+            <ChevronDown className="w-3 h-3 ml-auto" />
+          ) : (
+            <ChevronRight className="w-3 h-3 ml-auto" />
+          )}
+        </button>
+
+        {stressBurstersOpen && (
+          <div className="mt-1 space-y-1 pl-2 border-l-2 border-accent/20 ml-3">
+            {stressBusterLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = location === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                    isActive
+                      ? "bg-accent/20 text-accent font-medium"
+                      : "text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </nav>
   );
