@@ -282,13 +282,11 @@ export default function AirDraw() {
     try {
       // 1. Load MediaPipe WASM + hand model
       const { HandLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-      );
+      const wasmBase = import.meta.env.BASE_URL.replace(/\/$/, "") + "/mediapipe";
+      const vision = await FilesetResolver.forVisionTasks(wasmBase);
       landmarkerRef.current = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
-          modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+          modelAssetPath: wasmBase + "/hand_landmarker.task",
           delegate: "GPU",
         },
         runningMode: "VIDEO",
