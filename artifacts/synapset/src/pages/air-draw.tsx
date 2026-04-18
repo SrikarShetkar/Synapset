@@ -518,53 +518,51 @@ export default function AirDraw() {
                 />
               </div>
 
-              {/* Camera feed (hand mode only) */}
-              {drawMode === "hand" && (
-                <div className="flex flex-col gap-2">
-                  <div className="relative bg-card border border-card-border rounded-xl overflow-hidden aspect-[4/3]">
-                    <video
-                      ref={videoRef}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ transform: "scaleX(-1)" }}
-                      playsInline
-                      muted
-                    />
-                    <canvas
-                      ref={overlayRef}
-                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                      style={{ transform: "scaleX(-1)" }}
-                    />
-                    <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 rounded-full px-2 py-0.5 z-10">
-                      <div className={`w-1.5 h-1.5 rounded-full ${gesture !== "none" ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
-                      <span className="text-[9px] font-mono text-white">{gesture !== "none" ? "HAND" : "SEARCHING"}</span>
-                    </div>
-                  </div>
-
-                  {/* Gesture guide */}
-                  <div className="bg-card border border-card-border rounded-xl p-3 space-y-2 flex-1">
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Gestures</div>
-                    {[
-                      { e: "☝️", t: "Index tip",  d: "Draws" },
-                      { e: "🤏", t: "Pinch",       d: "Lifts pen" },
-                      { e: "🖐", t: "Open palm",   d: "Clears all" },
-                    ].map(({ e, t, d }) => (
-                      <div key={t} className="flex items-center gap-2">
-                        <span className="text-base leading-none">{e}</span>
-                        <div>
-                          <div className="text-xs font-medium text-foreground leading-tight">{t}</div>
-                          <div className="text-[10px] text-muted-foreground">{d}</div>
-                        </div>
-                      </div>
-                    ))}
-                    <button
-                      onClick={stopHandMode}
-                      className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <CameraOff className="w-3 h-3" /> Stop camera
-                    </button>
+              {/* Camera feed — always in DOM so videoRef is available on init */}
+              <div className={`flex flex-col gap-2 ${drawMode === "hand" ? "" : "hidden"}`}>
+                <div className="relative bg-card border border-card-border rounded-xl overflow-hidden aspect-[4/3]">
+                  <video
+                    ref={videoRef}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ transform: "scaleX(-1)" }}
+                    playsInline
+                    muted
+                  />
+                  <canvas
+                    ref={overlayRef}
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    style={{ transform: "scaleX(-1)" }}
+                  />
+                  <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 rounded-full px-2 py-0.5 z-10">
+                    <div className={`w-1.5 h-1.5 rounded-full ${gesture !== "none" ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
+                    <span className="text-[9px] font-mono text-white">{gesture !== "none" ? "HAND" : "SEARCHING"}</span>
                   </div>
                 </div>
-              )}
+
+                {/* Gesture guide */}
+                <div className="bg-card border border-card-border rounded-xl p-3 space-y-2 flex-1">
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Gestures</div>
+                  {[
+                    { e: "☝️", t: "Index tip",  d: "Draws" },
+                    { e: "🤏", t: "Pinch",       d: "Lifts pen" },
+                    { e: "🖐", t: "Open palm",   d: "Clears all" },
+                  ].map(({ e, t, d }) => (
+                    <div key={t} className="flex items-center gap-2">
+                      <span className="text-base leading-none">{e}</span>
+                      <div>
+                        <div className="text-xs font-medium text-foreground leading-tight">{t}</div>
+                        <div className="text-[10px] text-muted-foreground">{d}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={stopHandMode}
+                    className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <CameraOff className="w-3 h-3" /> Stop camera
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
