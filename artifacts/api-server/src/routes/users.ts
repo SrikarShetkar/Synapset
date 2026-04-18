@@ -8,6 +8,8 @@ const router: IRouter = Router();
 const DEFAULT_USER_ID = 1;
 
 router.get("/users/me", async (req, res): Promise<void> => {
+  res.json({ id: 1, name: "Demo Student", email: "demo@synapset.ai", xp: 450, streak: 7, level: 3 });
+  return;
   let [user] = await db.select().from(usersTable).where(eq(usersTable.id, DEFAULT_USER_ID));
 
   if (!user) {

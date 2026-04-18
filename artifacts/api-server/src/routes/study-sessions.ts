@@ -6,6 +6,7 @@ import {
   GetStudySessionParams,
   DeleteStudySessionParams,
 } from "@workspace/api-zod";
+import { mockState } from "./mock-db";
 
 const router: IRouter = Router();
 
@@ -23,6 +24,8 @@ function scheduleRevisions(sessionId: number) {
 }
 
 router.get("/study-sessions", async (req, res): Promise<void> => {
+  res.json(mockState.studySessions);
+  return;
   const sessions = await db.select()
     .from(studySessionsTable)
     .where(eq(studySessionsTable.userId, DEFAULT_USER_ID))
@@ -45,6 +48,31 @@ router.post("/study-sessions", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+
+  const newSession = {
+    id: mockState.nextSessionId++,
+    userId: 1,
+    topic: parsed.data.topic,
+    duration: parsed.data.duration,
+    difficulty: parsed.data.difficulty,
+    notes: parsed.data.notes ?? null,
+    createdAt: new Date().toISOString()
+  };
+
+  mockState.studySessions.unshift(newSession);
+  mockState.totalStudySessions++;
+
+  mockState.subjectCards.unshift({
+    topic: newSession.topic,
+    retentionPercent: 100,
+    daysSinceStudy: 0,
+    nextRevisionDate: new Date(Date.now() + 86400000).toISOString(),
+    isUrgent: false,
+    sessionId: newSession.id
+  });
+
+  res.status(201).json(newSession);
+  return;
 
   const [session] = await db.insert(studySessionsTable).values({
     userId: DEFAULT_USER_ID,
@@ -115,6 +143,23 @@ router.delete("/study-sessions/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
+
+  const sessionIdx = mockState.studySessions.findIndex(s => s.id === params.data.id);
+  if (sessionIdx === -1) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+
+  mockState.studySessions.splice(sessionIdx, 1);
+  mockState.totalStudySessions = Math.max(0, mockState.totalStudySessions - 1);
+
+  const cardIdx = mockState.subjectCards.findIndex(c => c.sessionId === params.data.id);
+  if (cardIdx !== -1) {
+    mockState.subjectCards.splice(cardIdx, 1);
+  }
+
+  res.sendStatus(204);
+  return;
 
   const [session] = await db.delete(studySessionsTable)
     .where(eq(studySessionsTable.id, params.data.id))

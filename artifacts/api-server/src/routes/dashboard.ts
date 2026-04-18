@@ -3,12 +3,22 @@ import { eq, desc, and, gte } from "drizzle-orm";
 import { db, studySessionsTable, revisionScheduleTable, focusSessionsTable, brainBreaksTable, usersTable } from "@workspace/db";
 import { GetRetentionCurveParams } from "@workspace/api-zod";
 import { calculateRetention, generateCurvePoints, getOptimalRevisionDay } from "../lib/retention";
+import { mockState } from "./mock-db";
 
 const router: IRouter = Router();
 
 const DEFAULT_USER_ID = 1;
 
 router.get("/dashboard/summary", async (req, res): Promise<void> => {
+  res.json({
+    user: mockState.user,
+    subjectCards: mockState.subjectCards,
+    totalStudySessions: mockState.totalStudySessions,
+    totalFocusSessions: mockState.totalFocusSessions,
+    totalBrainBreaks: mockState.totalBrainBreaks,
+    avgFocusScore: mockState.avgFocusScore,
+  });
+  return;
   let [user] = await db.select().from(usersTable).where(eq(usersTable.id, DEFAULT_USER_ID));
 
   if (!user) {
@@ -100,9 +110,7 @@ router.get("/dashboard/retention-curve/:sessionId", async (req, res): Promise<vo
     return;
   }
 
-  const [session] = await db.select()
-    .from(studySessionsTable)
-    .where(eq(studySessionsTable.id, params.data.sessionId));
+  const session = mockState.studySessions.find(s => s.id === params.data.sessionId);
 
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -110,7 +118,7 @@ router.get("/dashboard/retention-curve/:sessionId", async (req, res): Promise<vo
   }
 
   const now = new Date();
-  const daysSince = (now.getTime() - session.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+  const daysSince = (now.getTime() - new Date(session.createdAt).getTime()) / (1000 * 60 * 60 * 24);
   const currentRetention = calculateRetention(daysSince, session.difficulty) * 100;
   const optimalRevisionDay = getOptimalRevisionDay(session.difficulty);
   const dataPoints = generateCurvePoints(session.difficulty, 30);
@@ -123,6 +131,7 @@ router.get("/dashboard/retention-curve/:sessionId", async (req, res): Promise<vo
     currentRetention: Math.round(currentRetention * 10) / 10,
     optimalRevisionDay: Math.round(optimalRevisionDay * 10) / 10,
   });
+  return;
 });
 
 router.get("/dashboard/focus-heatmap", async (req, res): Promise<void> => {
