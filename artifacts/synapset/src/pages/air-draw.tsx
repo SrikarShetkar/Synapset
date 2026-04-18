@@ -274,7 +274,13 @@ export default function AirDraw() {
     setCvLoading(true);
     setCvError(null);
     isRunningRef.current = false;
+
+    // Clean up any lingering stream
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+
     try {
+      // 1. Load MediaPipe WASM + hand model
       const { HandLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
       const vision = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
@@ -289,31 +295,42 @@ export default function AirDraw() {
         numHands: 1,
       });
 
+      // 2. Get camera stream
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: "user" },
+        audio: false,
       });
       streamRef.current = stream;
-      const video = videoRef.current!;
+      const video = videoRef.current;
+      if (!video) throw new Error("Video element not ready.");
       video.srcObject = stream;
 
-      // Wait for video to be playable
+      // 3. Wait for video to be ready to play — use multiple events as fallback
       await new Promise<void>((res, rej) => {
-        video.onloadeddata = () => { video.play().then(res).catch(rej); };
-        video.onerror = rej;
+        const timeout = setTimeout(() => {
+          // If events don't fire in 8s, just try playing anyway
+          video.play().then(res).catch(rej);
+        }, 8000);
+        const onReady = () => {
+          clearTimeout(timeout);
+          video.play().then(res).catch(rej);
+        };
+        video.oncanplay     = onReady;
+        video.onloadeddata  = onReady;
+        video.onloadedmetadata = () => { video.play().catch(() => {}); };
+        video.onerror = (e) => { clearTimeout(timeout); rej(e); };
       });
 
-      // One extra frame so readyState === HAVE_ENOUGH_DATA
+      // 4. Wait until we have actual pixel data (readyState >= 2)
       await new Promise<void>((res) => {
-        const check = () =>
-          video.readyState >= 3 ? res() : requestAnimationFrame(check);
+        const check = () => (video.readyState >= 2 ? res() : requestAnimationFrame(check));
         check();
       });
 
-      // Switch layout first so ResizeObserver resizes the canvas
+      // 5. Switch layout → ResizeObserver resizes canvas → start loop
       setDrawMode("hand");
       setCvLoading(false);
 
-      // Start loop after layout settles
       setTimeout(() => {
         isRunningRef.current = true;
         rafRef.current = requestAnimationFrame(() => loopFnRef.current());
@@ -321,13 +338,17 @@ export default function AirDraw() {
     } catch (err: any) {
       isRunningRef.current = false;
       setCvLoading(false);
-      setCvError(
-        err?.name === "NotAllowedError"
-          ? "Camera permission denied. Allow access and retry."
-          : "Could not load hand model. Check your internet connection."
-      );
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      const msg =
+        err?.name === "NotAllowedError"   ? "Camera permission denied. Allow access and try again." :
+        err?.name === "NotFoundError"      ? "No camera found. Plug in a webcam and try again." :
+        err?.name === "NotReadableError"   ? "Camera is in use by another app. Close it and retry." :
+        err?.message?.includes("Video element") ? "Initialization error — please refresh the page." :
+        "Hand model failed to load. This may be a slow connection — try again.";
+      setCvError(msg);
     }
-  }, []); // no deps — reads only refs
+  }, []); // reads only refs — no stale closure risk
 
   const stopHandMode = useCallback(() => {
     isRunningRef.current = false;
@@ -417,8 +438,17 @@ export default function AirDraw() {
         </div>
 
         {cvError && (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
-            <AlertCircle className="w-4 h-4 shrink-0" /> {cvError}
+          <div className="flex items-center justify-between gap-3 p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {cvError}
+            </div>
+            <button
+              onClick={initHandCV}
+              disabled={cvLoading}
+              className="shrink-0 px-3 py-1 rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive text-xs font-semibold transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
 

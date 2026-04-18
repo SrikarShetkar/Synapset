@@ -170,13 +170,25 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [selectedSession, setSelectedSession] = useState<{ id: number; topic: string } | null>(null);
 
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; topic: string } | null>(null);
+
   const handleDelete = (sessionId: number, topic: string) => {
+    setConfirmDelete({ id: sessionId, topic });
+  };
+
+  const confirmAndDelete = () => {
+    if (!confirmDelete) return;
     deleteSession.mutate(
-      { id: sessionId },
+      { id: confirmDelete.id },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          toast({ title: "Subject removed", description: `"${topic}" deleted from your brain map.` });
+          toast({ title: "Subject removed", description: `"${confirmDelete.topic}" deleted from your brain map.` });
+          setConfirmDelete(null);
+        },
+        onError: () => {
+          toast({ title: "Delete failed", description: "Could not remove subject. Try again.", variant: "destructive" });
+          setConfirmDelete(null);
         },
       }
     );
@@ -246,7 +258,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => handleDelete(card.sessionId, card.topic)}
                     disabled={deleteSession.isPending}
-                    className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground/0 group-hover:text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                    className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                     title="Remove subject"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -341,6 +353,51 @@ export default function Dashboard() {
             topic={selectedSession.topic}
             onClose={() => setSelectedSession(null)}
           />
+        )}
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setConfirmDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-card border border-card-border rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-destructive/10 rounded-xl">
+                  <Trash2 className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Remove Subject</h3>
+                  <p className="text-xs text-muted-foreground">This cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Remove <span className="text-foreground font-semibold">"{confirmDelete.topic}"</span> from your brain map? All retention data will be deleted.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-card-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAndDelete}
+                  disabled={deleteSession.isPending}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-destructive text-white text-sm font-semibold hover:bg-destructive/90 transition-colors disabled:opacity-60"
+                >
+                  {deleteSession.isPending ? "Removing…" : "Remove"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </Layout>

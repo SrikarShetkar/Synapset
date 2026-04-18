@@ -5,7 +5,7 @@ import { studySessionsTable } from "./study-sessions";
 
 export const revisionScheduleTable = pgTable("revision_schedule", {
   id: serial("id").primaryKey(),
-  sessionId: integer("session_id").notNull().references(() => studySessionsTable.id),
+  sessionId: integer("session_id").notNull().references(() => studySessionsTable.id, { onDelete: "cascade" }),
   nextRevision: timestamp("next_revision", { withTimezone: true }).notNull(),
   completed: boolean("completed").notNull().default(false),
   retentionScore: real("retention_score").notNull().default(1.0),
